@@ -7,3 +7,4 @@ google-generativeai
 python-dotenv
 numpy
 requests
+google-genai

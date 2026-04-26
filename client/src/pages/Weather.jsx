@@ -8,6 +8,17 @@ const weatherIcons = {
   Mist: '🌫️', Haze: '🌫️',
 }
 
+const weatherBgGradients = {
+  Clear: 'from-amber-50 to-orange-50',
+  Clouds: 'from-gray-50 to-slate-100',
+  Rain: 'from-blue-50 to-slate-100',
+  Drizzle: 'from-cyan-50 to-blue-50',
+  Thunderstorm: 'from-purple-50 to-slate-100',
+  Snow: 'from-blue-50 to-white',
+  Mist: 'from-gray-50 to-white',
+  Haze: 'from-orange-50 to-amber-50',
+}
+
 export default function Weather() {
   const [city, setCity] = useState('')
   const [weather, setWeather] = useState(null)
@@ -20,12 +31,12 @@ export default function Weather() {
     if (!city.trim()) return
     setLoading(true)
     setError('')
+
     try {
-      const { data } = await axios.get(
-        `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${API_KEY}&units=metric&lang=hi`
-      )
+      const url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${API_KEY}&units=metric&lang=hi`
+      const { data } = await axios.get(url)
       setWeather(data)
-    } catch {
+    } catch (err) {
       setError('Shehar nahi mila. Sahi naam likhein.')
       setWeather(null)
     } finally {
@@ -33,80 +44,119 @@ export default function Weather() {
     }
   }
 
+  const getFarmingTip = (temp, condition) => {
+    if (condition === 'Rain') return 'Baarish — paani ka dhyan rakhein.'
+    if (condition === 'Thunderstorm') return 'Toofan — fasal bachayein!'
+    if (temp > 35) return 'Bahut garmi — subah/shaam sinchaii karein.'
+    if (temp > 28) return 'Garmi — mulching karein.'
+    if (temp > 20) return 'Mausam accha hai.'
+    if (temp > 10) return 'Thand — paani kam dein.'
+    return 'Zyada thand — pala se bachayein.'
+  }
+
+  const bgGradient = weather
+    ? (weatherBgGradients[weather.weather[0].main] || 'from-green-50 to-white')
+    : 'from-sky-50 to-white'
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className={`min-h-screen bg-gradient-to-b ${bgGradient} pb-24 sm:pb-8`}>
       <Navbar />
 
       <div className="max-w-xl mx-auto px-4 py-5">
-        <h2 className="text-xl font-bold text-green-700 mb-1">🌦️ Mausam Jaankari</h2>
-        <p className="text-gray-500 text-sm mb-5">Apne khet ka mausam dekhein</p>
 
+        {/* Header */}
+        <div className="mb-6">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-12 h-12 bg-gradient-to-br from-sky-400 to-blue-500 rounded-2xl flex items-center justify-center text-2xl">
+              🌦️
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-blue-800">Mausam Jaankari</h2>
+              <p className="text-gray-500 text-sm">Apne khet ka mausam dekhein</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Search */}
         <div className="flex gap-2 mb-4">
           <input
-            className="flex-1 border rounded-xl px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-green-400 bg-white"
+            className="flex-1 border-2 border-gray-100 rounded-2xl px-4 py-3"
             placeholder="Shehar likhein... jaise Meerut"
             value={city}
             onChange={e => setCity(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && getWeather()}
           />
-          <button onClick={getWeather} disabled={loading}
-            className="bg-green-600 text-white px-5 rounded-xl disabled:opacity-50 font-semibold">
+          <button
+            onClick={getWeather}
+            disabled={loading}
+            className="bg-blue-500 text-white px-6 rounded-2xl"
+          >
             {loading ? '⏳' : 'Dekho'}
           </button>
         </div>
 
+        {/* Error */}
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-600 text-sm px-4 py-3 rounded-xl mb-4">
-            {error}
+          <div className="bg-red-50 text-red-600 px-4 py-3 rounded-2xl mb-4">
+            ⚠️ {error}
           </div>
         )}
 
+        {/* Weather */}
         {weather && (
-          <div className="bg-white rounded-2xl shadow-sm p-5">
-            <div className="text-center mb-4">
-              <div className="text-6xl mb-2">{weatherIcons[weather.weather[0].main] || '🌤️'}</div>
-              <h3 className="text-lg font-bold text-gray-800">{weather.name}</h3>
-              <p className="text-5xl font-bold text-green-600 my-2">{Math.round(weather.main.temp)}°C</p>
-              <p className="text-gray-500 capitalize text-sm">{weather.weather[0].description}</p>
+          <div>
+
+            <div className="bg-white rounded-3xl shadow-lg p-6 mb-4">
+              <div className="text-center">
+                <div className="text-7xl">
+                  {weatherIcons[weather.weather[0].main] || '🌤️'}
+                </div>
+                <h3 className="text-xl font-bold">{weather.name}</h3>
+                <p className="text-5xl font-bold">
+                  {Math.round(weather.main.temp)}°C
+                </p>
+                <p>{weather.weather[0].description}</p>
+              </div>
+
+              {/* Stats */}
+              <div className="grid grid-cols-3 gap-3 mt-4">
+                <div className="text-center">
+                  💧 {weather.main.humidity}%
+                </div>
+                <div className="text-center">
+                  💨 {weather.wind.speed} m/s
+                </div>
+                <div className="text-center">
+                  🌡️ {Math.round(weather.main.feels_like)}°C
+                </div>
+              </div>
+
+              {/* Extra */}
+              <div className="grid grid-cols-2 gap-3 mt-4">
+                <div className="text-center">
+                  Pressure: {weather.main.pressure} hPa
+                </div>
+                <div className="text-center">
+                  Visibility: {(weather.visibility / 1000).toFixed(1)} km
+                </div>
+              </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-3 mb-4">
-              <div className="bg-blue-50 rounded-xl p-3 text-center">
-                <p className="text-xs text-gray-500">Humidity</p>
-                <p className="font-bold text-blue-600">{weather.main.humidity}%</p>
-              </div>
-              <div className="bg-green-50 rounded-xl p-3 text-center">
-                <p className="text-xs text-gray-500">Wind</p>
-                <p className="font-bold text-green-600">{weather.wind.speed} m/s</p>
-              </div>
-              <div className="bg-orange-50 rounded-xl p-3 text-center">
-                <p className="text-xs text-gray-500">Feels like</p>
-                <p className="font-bold text-orange-600">{Math.round(weather.main.feels_like)}°C</p>
-              </div>
+            {/* Tip */}
+            <div className="bg-yellow-50 p-4 rounded-2xl">
+              💡 {getFarmingTip(weather.main.temp, weather.weather[0].main)}
             </div>
 
-            <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
-              <p className="text-sm text-yellow-800">
-                💡 <strong>Farming Tip:</strong>{' '}
-                {weather.main.temp > 35
-                  ? 'Bahut garmi — subah ya shaam sinchaii karein.'
-                  : weather.main.temp < 10
-                  ? 'Thandi — pala se fasal bachayein.'
-                  : weather.weather[0].main === 'Rain'
-                  ? 'Baarish — khet mein paani ka dhyan rakhein.'
-                  : 'Mausam theek hai — kheti ka accha samay!'}
-              </p>
-            </div>
           </div>
         )}
 
+        {/* Empty */}
         {!weather && !error && (
-          <div className="bg-white rounded-2xl shadow-sm p-8 text-center">
-            <div className="text-5xl mb-3">🌍</div>
-            <p className="text-gray-500">Shehar ka naam likhein</p>
-            <p className="text-gray-400 text-sm mt-1">Aur mausam dekho!</p>
+          <div className="text-center p-10">
+            🌍 Shehar ka naam likho
           </div>
         )}
+
       </div>
     </div>
   )
